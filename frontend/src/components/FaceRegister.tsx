@@ -11,7 +11,7 @@ function FaceRegister() {
   const [modelsLoaded, setModelsLoaded] = useState<boolean>(false);
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
-  
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -44,7 +44,7 @@ function FaceRegister() {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 640, height: 480 },
       });
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
@@ -58,7 +58,7 @@ function FaceRegister() {
 
   const stopCamera = () => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
     if (videoRef.current) {
@@ -123,7 +123,7 @@ function FaceRegister() {
         };
         faceapi.matchDimensions(canvasRef.current, displaySize);
         const resizedDetection = faceapi.resizeResults(detection, displaySize);
-        
+
         const context = canvasRef.current.getContext('2d');
         if (context) {
           context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
@@ -165,7 +165,10 @@ function FaceRegister() {
       {registerStatus === 'idle' && (
         <div className="space-y-4">
           <div>
-            <label htmlFor="registerUserName" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="registerUserName"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Nome de Usuário
             </label>
             <input
@@ -213,10 +216,7 @@ function FaceRegister() {
               height="480"
               className="w-full h-auto"
             />
-            <canvas
-              ref={canvasRef}
-              className="absolute top-0 left-0 w-full h-full"
-            />
+            <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />
           </div>
 
           <div className="flex items-center justify-center gap-3 text-primary">

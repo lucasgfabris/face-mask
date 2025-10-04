@@ -12,12 +12,8 @@ function App() {
       <div className="w-full max-w-2xl">
         <div className="bg-white rounded-lg shadow-custom p-6 md:p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-primary mb-2">
-              Face Mask Auth
-            </h1>
-            <p className="text-gray-600">
-              Sistema de autenticação facial seguro e escalável
-            </p>
+            <h1 className="text-3xl font-bold text-primary mb-2">Face Mask Auth</h1>
+            <p className="text-gray-600">Sistema de autenticação facial seguro e escalável</p>
           </div>
 
           <div className="flex gap-2 mb-6">
@@ -49,9 +45,7 @@ function App() {
         </div>
 
         <div className="mt-6 text-center text-sm text-gray-600">
-          <p>
-            Sistema desenvolvido com React, TypeScript, Tailwind CSS e NestJS
-          </p>
+          <p>Sistema desenvolvido com React, TypeScript, Tailwind CSS e NestJS</p>
         </div>
       </div>
     </div>

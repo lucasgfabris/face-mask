@@ -12,21 +12,14 @@ export class AuthController {
     try {
       const ipAddress = request.ip || request.socket.remoteAddress;
       const userAgent = request.headers['user-agent'];
-      
-      const result = await this.authService.register(
-        registerDto,
-        ipAddress,
-        userAgent,
-      );
+
+      const result = await this.authService.register(registerDto, ipAddress, userAgent);
       return result;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new HttpException(
-        'Erro ao registrar usuário',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('Erro ao registrar usuário', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -35,21 +28,14 @@ export class AuthController {
     try {
       const ipAddress = request.ip || request.socket.remoteAddress;
       const userAgent = request.headers['user-agent'];
-      
-      const result = await this.authService.login(
-        loginDto,
-        ipAddress,
-        userAgent,
-      );
+
+      const result = await this.authService.login(loginDto, ipAddress, userAgent);
       return result;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new HttpException(
-        'Erro ao autenticar usuário',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('Erro ao autenticar usuário', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -58,11 +44,8 @@ export class AuthController {
     try {
       const users = await this.authService.getAllUsers();
       return { success: true, users };
-    } catch (error) {
-      throw new HttpException(
-        'Erro ao buscar usuários',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+    } catch {
+      throw new HttpException('Erro ao buscar usuários', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -71,11 +54,8 @@ export class AuthController {
     try {
       const logs = await this.authService.getAuthLogs();
       return { success: true, logs };
-    } catch (error) {
-      throw new HttpException(
-        'Erro ao buscar logs',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+    } catch {
+      throw new HttpException('Erro ao buscar logs', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

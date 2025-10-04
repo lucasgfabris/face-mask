@@ -39,6 +39,9 @@ Thumbs.db
 coverage/
 .nyc_output/
 
+# Face recognition models (large files - download via npm run download:models)
+frontend/public/models/
+
 # Misc
 *.pem
 .cache/

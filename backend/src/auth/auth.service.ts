@@ -13,7 +13,7 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(AuthLog)
     private readonly authLogRepository: Repository<AuthLog>,
-    private readonly faceRecognitionService: FaceRecognitionService,
+    private readonly faceRecognitionService: FaceRecognitionService
   ) {}
 
   async register(registerDto: RegisterDto, ipAddress?: string, userAgent?: string) {
@@ -26,10 +26,7 @@ export class AuthService {
 
       if (existingUserByName) {
         await this.logAuth(userName, AuthType.REGISTER, false, ipAddress, userAgent);
-        throw new HttpException(
-          'Nome de usuário já existe',
-          HttpStatus.CONFLICT,
-        );
+        throw new HttpException('Nome de usuário já existe', HttpStatus.CONFLICT);
       }
 
       const existingUserByEmail = await this.userRepository.findOne({
@@ -38,28 +35,20 @@ export class AuthService {
 
       if (existingUserByEmail) {
         await this.logAuth(userName, AuthType.REGISTER, false, ipAddress, userAgent);
-        throw new HttpException(
-          'E-mail já cadastrado',
-          HttpStatus.CONFLICT,
-        );
+        throw new HttpException('E-mail já cadastrado', HttpStatus.CONFLICT);
       }
 
       const allUsers = await this.userRepository.find();
-      const existingDescriptors = allUsers.map((user) =>
-        user.getFaceDescriptorArray(),
-      );
+      const existingDescriptors = allUsers.map((user) => user.getFaceDescriptorArray());
 
       const isFaceRegistered = this.faceRecognitionService.findMatchingFace(
         faceDescriptor,
-        existingDescriptors,
+        existingDescriptors
       );
 
       if (isFaceRegistered !== -1) {
         await this.logAuth(userName, AuthType.REGISTER, false, ipAddress, userAgent);
-        throw new HttpException(
-          'Este rosto já está registrado',
-          HttpStatus.CONFLICT,
-        );
+        throw new HttpException('Este rosto já está registrado', HttpStatus.CONFLICT);
       }
 
       const user = new User();
@@ -78,10 +67,7 @@ export class AuthService {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new HttpException(
-        'Erro ao registrar usuário',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('Erro ao registrar usuário', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -95,24 +81,15 @@ export class AuthService {
 
       if (!user) {
         await this.logAuth(userName, AuthType.LOGIN, false, ipAddress, userAgent);
-        throw new HttpException(
-          'Usuário não encontrado',
-          HttpStatus.NOT_FOUND,
-        );
+        throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
       }
 
       const storedDescriptor = user.getFaceDescriptorArray();
-      const isMatch = this.faceRecognitionService.compareFaces(
-        faceDescriptor,
-        storedDescriptor,
-      );
+      const isMatch = this.faceRecognitionService.compareFaces(faceDescriptor, storedDescriptor);
 
       if (!isMatch) {
         await this.logAuth(userName, AuthType.LOGIN, false, ipAddress, userAgent);
-        throw new HttpException(
-          'Rosto não reconhecido. Tente novamente.',
-          HttpStatus.UNAUTHORIZED,
-        );
+        throw new HttpException('Rosto não reconhecido. Tente novamente.', HttpStatus.UNAUTHORIZED);
       }
 
       await this.logAuth(userName, AuthType.LOGIN, true, ipAddress, userAgent);
@@ -126,10 +103,7 @@ export class AuthService {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new HttpException(
-        'Erro ao autenticar usuário',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('Erro ao autenticar usuário', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -138,7 +112,7 @@ export class AuthService {
     authType: AuthType,
     success: boolean,
     ipAddress?: string,
-    userAgent?: string,
+    userAgent?: string
   ): Promise<void> {
     try {
       const log = new AuthLog();

@@ -218,6 +218,8 @@ npm run dev:backend    # Inicia apenas backend
 npm run build          # Build de produção
 npm run build:frontend # Build do frontend
 npm run build:backend  # Build do backend
+npm run lint           # Executa linter no frontend e backend
+npm run format         # Formata código com Prettier no frontend e backend
 ```
 
 ## Contribuindo

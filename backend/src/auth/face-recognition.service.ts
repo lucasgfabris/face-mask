@@ -23,18 +23,12 @@ export class FaceRecognitionService {
     return distance < this.MATCH_THRESHOLD;
   }
 
-  findMatchingFace(
-    targetDescriptor: number[],
-    knownDescriptors: number[][],
-  ): number {
+  findMatchingFace(targetDescriptor: number[], knownDescriptors: number[][]): number {
     let bestMatchIndex = -1;
     let bestDistance = Infinity;
 
     for (let i = 0; i < knownDescriptors.length; i++) {
-      const distance = this.euclideanDistance(
-        targetDescriptor,
-        knownDescriptors[i],
-      );
+      const distance = this.euclideanDistance(targetDescriptor, knownDescriptors[i]);
 
       if (distance < bestDistance && distance < this.MATCH_THRESHOLD) {
         bestDistance = distance;
