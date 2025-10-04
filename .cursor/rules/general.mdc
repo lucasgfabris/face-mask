@@ -1,0 +1,685 @@
+---
+alwaysApply: true
+---
+
+# Regras Gerais do Projeto Angular Onboarding Yooga
+
+## 🎯 Arquitetura e Organização
+
+### Estrutura de Componentes
+
+- **Standalone Components**: Todos os componentes devem ser standalone (`standalone: true`)
+- **Organização de pastas**:
+  - `src/app/pages/` - Páginas principais (landing, onboarding-welcome, onboarding-steps, yooga-platform)
+  - `src/app/steps/` - Componentes de etapas do onboarding (setup-\*)
+  - `src/app/shared/` - Componentes reutilizáveis (field, tab-group, tag-selectable)
+  - `src/app/core/services/` - Serviços compartilhados
+  - `src/app/layout/` - Componentes de layout
+  - `src/app/features/` - Features modulares
+
+### Convenções de Nomenclatura
+
+- Componentes de setup: `setup-{nome}.component.ts`
+- Serviços: `{nome}.service.ts`
+- Use kebab-case para nomes de arquivos
+- Use PascalCase para classes
+- Use camelCase para variáveis e métodos
+
+#### Nomes de Variáveis Descritivos
+
+**SEMPRE use nomes descritivos para variáveis, mesmo em contextos curtos:**
+
+```typescript
+// ✅ CORRETO - Nomes descritivos
+const formData = this.itemForm();
+const currentSeconds = this.secondsLeft();
+const selectedFile = event.target.files?.[0];
+const restaurantName = this.lead.restaurantName;
+
+for (let taskIndex = 0; taskIndex < tasks.length; taskIndex++) {
+  const task = tasks[taskIndex];
+}
+
+for (let firstIndex = 0; firstIndex < items.length; firstIndex++) {
+  for (let secondIndex = firstIndex + 1; secondIndex < items.length; secondIndex++) {
+    const firstRange = items[firstIndex];
+    const secondRange = items[secondIndex];
+  }
+}
+
+// ❌ ERRADO - Nomes não descritivos
+const f = this.itemForm();
+const v = this.secondsLeft();
+const s = this.lead.restaurantName;
+let i = 0;
+let t = tasks[0];
+
+for (let i = 0; i < items.length; i++) {
+  const a = items[i];
+  const b = items[i + 1];
+}
+```
+
+**Exceções aceitáveis:**
+
+- `i`, `j`, `k` APENAS em loops muito simples (< 5 linhas) onde o contexto é óbvio
+- Parâmetros de callback quando o tipo é claro: `.map(item => item.name)` ou `.filter((_, index) => ...)`
+- Variáveis matemáticas convencionais: `x`, `y` para coordenadas, `n` para números em contextos matemáticos claros
+
+## 🔧 Angular Best Practices
+
+### Injeção de Dependências
+
+**SEMPRE use a função `inject()` ao invés de constructor injection:**
+
+```typescript
+// ✅ CORRETO
+import { Component, inject } from "@angular/core";
+
+export class MyComponent {
+  private router = inject(Router);
+  private myService = inject(MyService);
+}
+
+// ❌ ERRADO
+export class MyComponent {
+  constructor(
+    private router: Router,
+    private myService: MyService
+  ) {}
+}
+```
+
+### Signals (Estado Reativo)
+
+- Use `signal()` para estado local reativo
+- Use `computed()` para valores derivados
+- Exemplo: `myValue = signal<string>('');`
+
+### Imports
+
+- Importe `inject` sempre que usar injeção de dependências
+- Agrupe imports por categoria: Angular core, Angular common, local imports
+
+## ♿ Acessibilidade (WCAG)
+
+### Elementos Interativos
+
+**SEMPRE torne elementos clicáveis acessíveis por teclado:**
+
+```html
+<!-- ✅ CORRETO - Elemento div com click -->
+<div
+  role="button"
+  tabindex="0"
+  (click)="handleClick()"
+  (keydown.enter)="handleClick()"
+  (keydown.space)="handleClick()"
+  class="cursor-pointer..."
+>
+  Conteúdo
+</div>
+
+<!-- ❌ ERRADO -->
+<div (click)="handleClick()" class="cursor-pointer...">Conteúdo</div>
+```
+
+### Labels e Form Controls
+
+**SEMPRE associe labels aos inputs usando `for` e `id`:**
+
+```html
+<!-- ✅ CORRETO -->
+<label for="userName" class="...">Nome do Usuário</label>
+<input id="userName" type="text" [(ngModel)]="userName" />
+
+<!-- ❌ ERRADO -->
+<label class="...">Nome do Usuário</label>
+<input type="text" [(ngModel)]="userName" />
+```
+
+### Modais e Dialogs
+
+- Use `role="dialog"` e `aria-modal="true"` em modais
+- Use `role="document"` no conteúdo do modal
+- Adicione `(keydown.escape)="closeModal()"` para fechar com ESC
+
+## 🎨 Styling e Design System
+
+### Tailwind CSS Classes
+
+- Use as classes personalizadas do Yooga:
+  - `rounded-yooga-sm`, `rounded-yooga-md`, `rounded-yooga-lg`
+  - `shadow-yooga`, `shadow-yooga-button`
+  - Cores: `yooga-primary`, `yooga-secondary`, `yooga-accent`, `yooga-blue-{50-700}`
+
+### Consistência Visual
+
+- Altura padrão de inputs: `h-12` ou `h-14`
+- Border padrão: `border border-gray-200` ou `border-[#CED2D3]`
+- Focus state: `focus:border-yooga-primary` ou `focus:border-[#0B7CBE]`
+- Transições: sempre adicione `transition-all duration-200` em elementos interativos
+
+## 📝 TypeScript
+
+### Type Safety
+
+**NUNCA use `any`, sempre especifique tipos:**
+
+```typescript
+// ✅ CORRETO
+private timer: number | null = null;
+const list = items.map((item) => item.name);
+
+// ❌ ERRADO
+private timer: any = null;
+const list = items.map((item: any) => item.name);
+```
+
+### Destructuring
+
+- Use destructuring nomeado ao invés de `_` para parâmetros não utilizados:
+
+```typescript
+// ✅ CORRETO
+.filter(([, config]) => config.active)
+.map(([key]) => key)
+
+// ❌ ERRADO
+.filter(([_, config]) => config.active)
+.map(([key, _]) => key)
+```
+
+## 🧪 Formulários
+
+### Template-Driven Forms
+
+- Use `FormsModule` e `[(ngModel)]` para binding bidirecional
+- Sempre adicione validações: `required`, `minlength`, `pattern`, etc.
+- Use template references: `#myControl="ngModel"`
+- Mostre mensagens de erro condicionalmente: `*ngIf="myControl.invalid && myControl.touched"`
+
+### Form IDs
+
+- Sempre adicione IDs únicos aos inputs
+- Use IDs descritivos: `userName`, `storeAddress`, `responsibleEmail`
+- Evite IDs duplicados, use sufixos se necessário: `whatsapp1`, `whatsapp2`
+
+## 🎭 Templates
+
+### Inline Templates
+
+- Templates pequenos (< 100 linhas) podem ser inline no componente
+- Templates grandes devem estar em arquivo separado `.html`
+
+### Conditional Rendering
+
+- Use `*ngIf` para renderização condicional
+- Use `*ngFor` com `trackBy` quando apropriado
+- Use `[ngClass]` para classes dinâmicas
+- Use `[class]` para binding de classes complexas
+
+### Accessibility Attributes
+
+```html
+<!-- Sempre adicione atributos ARIA apropriados -->
+<button aria-label="Fechar modal" (click)="close()">×</button>
+<img src="..." alt="Descrição significativa" />
+<input type="text" placeholder="Digite aqui" />
+```
+
+## 🔄 Navegação e Routing
+
+### Setup Navigation Service
+
+- Use `SetupNavigationService` para navegação entre etapas
+- Métodos disponíveis:
+  - `navigateToNext(route: string)` - Navegar para próxima etapa
+  - `setOnboardingData(data)` - Armazenar dados do onboarding
+  - `getLeadFromSession()` - Recuperar dados de lead
+  - `setResponsibleName(name)` - Definir nome do responsável
+
+### Router
+
+- Use `inject(Router)` para navegação programática
+- Use `router.navigateByUrl('/path')` para navegação
+
+## 📦 Componentes Compartilhados
+
+### FieldComponent
+
+```html
+<app-field label="Nome do Campo" for="inputId">
+  <input id="inputId" type="text" [(ngModel)]="value" />
+</app-field>
+```
+
+### TabGroupComponent
+
+- Use com array de `TabItem[]` com `id`, `label`, `selected`
+- Emite evento `(tabSelected)` com o ID selecionado
+
+### TagSelectableComponent
+
+- Use com array de `TagItem[]` com `id`, `label`, `selected`
+- Emite evento `(tagSelected)` com o ID selecionado
+
+## 🎨 Padrões de UI
+
+### Botões
+
+```html
+<!-- Botão primário -->
+<button
+  class="h-12 rounded-yooga-md bg-yooga-secondary px-6 font-medium text-yooga-accent shadow-yooga-button transition-all duration-200 hover:bg-yooga-primary hover:text-white"
+>
+  Texto do Botão
+</button>
+
+<!-- Botão secundário -->
+<button class="h-12 rounded-yooga-md border border-gray-200 px-4 text-gray-700 hover:bg-gray-50">
+  Texto
+</button>
+```
+
+### Cards com Seleção
+
+```html
+<div
+  role="button"
+  tabindex="0"
+  [class]="selected ? 'border-2 border-yooga-blue-600 bg-yooga-blue-50' : 'border border-gray-200 bg-white'"
+  (click)="select()"
+  (keydown.enter)="select()"
+  (keydown.space)="select()"
+  class="cursor-pointer rounded-yooga-md p-4 transition-all"
+>
+  <!-- Conteúdo -->
+</div>
+```
+
+### Radio/Checkbox Visual Customizado
+
+```html
+<div
+  class="flex h-5 w-5 items-center justify-center rounded-full"
+  [class]="selected ? 'bg-yooga-secondary' : 'border-2 border-gray-300'"
+>
+  <div *ngIf="selected" class="h-1 w-1 rounded-full bg-yooga-accent"></div>
+</div>
+```
+
+## 🧩 Padrões de Estado
+
+### Signals Pattern
+
+```typescript
+// Estado local
+myValue = signal<string>("");
+isLoading = signal<boolean>(false);
+items = signal<Item[]>([]);
+
+// Valores computados
+filteredItems = computed(() => {
+  return this.items().filter((item) => item.active);
+});
+
+// Atualizar signals
+this.myValue.set("novo valor");
+this.items.set([...newItems]);
+```
+
+### Form State
+
+```typescript
+formData = signal({
+  field1: '',
+  field2: 0,
+  field3: false,
+});
+
+// Atualizar campo específico
+update(field: string, value: any) {
+  this.formData.set({ ...this.formData(), [field]: value });
+}
+```
+
+## 📱 Responsividade
+
+### Breakpoints Tailwind
+
+- `sm:` - 640px
+- `md:` - 768px
+- `lg:` - 1024px
+- `xl:` - 1280px
+
+### Grid Responsivo
+
+```html
+<div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+  <!-- Conteúdo -->
+</div>
+```
+
+## ⚡ Performance
+
+### Lazy Loading
+
+- Componentes de steps são carregados sob demanda via routing
+- Use code splitting para otimizar bundles
+
+### Change Detection
+
+- Evite operações custosas em templates
+- Use `trackBy` em `*ngFor` quando apropriado
+
+## 🔒 Validação e Tratamento de Erros
+
+### Form Validation
+
+```html
+<input #myControl="ngModel" [(ngModel)]="value" required minlength="2" />
+<p *ngIf="myControl.invalid && (myControl.touched || submitted)" class="text-red-600">
+  Mensagem de erro
+</p>
+```
+
+### Try-Catch para Storage
+
+```typescript
+try {
+  sessionStorage.setItem("key", JSON.stringify(data));
+} catch {
+  // Silently fail if sessionStorage is unavailable
+}
+```
+
+## 🎯 ESLint Rules
+
+### Regras Ativas
+
+- `@angular-eslint/prefer-inject` - Use inject() ao invés de constructor
+- `@angular-eslint/template/click-events-have-key-events` - Adicione eventos de teclado
+- `@angular-eslint/template/interactive-supports-focus` - Elementos interativos devem ser focáveis
+- `@angular-eslint/template/label-has-associated-control` - Labels devem ter `for`
+- `@typescript-eslint/no-explicit-any` - Não use `any`
+- `@typescript-eslint/no-unused-vars` - Remova variáveis não utilizadas
+
+## 📚 Imports Essenciais
+
+### Component Imports Comuns
+
+```typescript
+import { Component, signal, computed, inject } from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import { Router } from "@angular/router";
+```
+
+## 🎨 Design Tokens
+
+### Cores Principais
+
+- Primary: `#0D547F` (yooga-accent)
+- Secondary: `#83CEF6` (yooga-secondary)
+- Blue 600: `#0B7CBE` (yooga-blue-600)
+- Blue 50: `#F1F9FE` (yooga-blue-50)
+- Success: `#2FC26E`
+- Error: `#EF4444`
+
+### Espaçamentos
+
+- Gaps pequenos: `gap-2` (8px)
+- Gaps médios: `gap-4` (16px)
+- Gaps grandes: `gap-6` (24px)
+- Padding de cards: `p-4 md:p-6 lg:p-8`
+
+## 🧪 Testing
+
+### Estrutura de Testes
+
+- Arquivos de teste: `*.spec.ts`
+- Coverage em `coverage/fusion-angular-tailwind-starter/`
+- Execute testes com: `npm test`
+
+## 🚀 Build e Deploy
+
+### Scripts Disponíveis
+
+- `npm run lint` - Verificar erros de lint
+- `npm run format` - Formatar código com Prettier
+- `npm run build` - Build de produção
+- `npm test` - Executar testes
+
+### Pré-commit Checklist
+
+1. ✅ Código sem erros de lint (`npm run lint`)
+2. ✅ Código formatado (`npm run format`)
+3. ✅ Build sem erros (`npm run build`)
+4. ✅ Testes passando (se aplicável)
+
+## 🎯 Padrões Específicos do Projeto
+
+### SessionStorage
+
+- Prefixo: `yooga.{nome}` (ex: `yooga.lead`)
+- Sempre use try-catch ao acessar sessionStorage
+- Dados do lead: `sessionStorage.getItem('yooga.lead')`
+
+### Navigation Service
+
+- Centralize lógica de navegação no `SetupNavigationService`
+- Armazene dados de onboarding no serviço
+- Use para compartilhar estado entre etapas
+
+### File Uploads
+
+- Use inputs hidden: `<input #fileInput type="file" accept="image/*" />`
+- Trigger programaticamente: `fileInput.click()`
+- Gere previews com `FileReader`
+
+### Validação de Campos
+
+```typescript
+// Pattern para campos preenchidos
+fieldFilled(field: string): boolean {
+  const value = this.data()[field];
+  return !!value && value.toString().trim() !== '';
+}
+
+// Classes dinâmicas
+filledClass(field: string): string {
+  return this.fieldFilled(field)
+    ? 'border-[#2FC26E] bg-[#F3FFF9] text-[#4B5053]'
+    : '';
+}
+```
+
+## 🎨 Componentes Visuais Recorrentes
+
+### Indicador de Campo Preenchido
+
+```html
+<div
+  *ngIf="fieldFilled('fieldName')"
+  class="pointer-events-none absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-[#DFF7EB]"
+>
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <path
+      d="M10.6667 4.6665L6.41667 8.9165L4 6.49984"
+      stroke="#1F5C2F"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </svg>
+</div>
+```
+
+### Loading Spinner
+
+```html
+<div
+  class="h-12 w-12 animate-spin rounded-full border-2 border-gray-200 border-t-yooga-primary"
+></div>
+```
+
+### Progress Bar
+
+```html
+<div class="h-1 overflow-hidden rounded-full bg-gray-200">
+  <div
+    class="h-full rounded-full bg-yooga-blue-600 transition-all duration-300"
+    [style.width.%]="progress"
+  ></div>
+</div>
+```
+
+## 🔐 Type Safety
+
+### Interfaces e Types
+
+- Defina interfaces para dados complexos
+- Use tipos literais para opções fixas: `'delivery' | 'presencial' | 'both'`
+- Use tipos genéricos quando apropriado
+
+### Type Guards
+
+```typescript
+// Ao acessar propriedades dinâmicas
+"propertyName" in object && object.propertyName ? object.propertyName : defaultValue;
+
+// Com casting seguro
+const value = ("prop" in obj ? obj.prop : "default") as SpecificType;
+```
+
+## 📋 Forms Pattern
+
+### Multi-Step Forms
+
+```typescript
+step = signal<1 | 2 | 3>(1);
+submitted = false;
+
+next(form: NgForm) {
+  this.submitted = true;
+  if (form.invalid) return;
+  this.submitted = false;
+  this.step.set(this.step() + 1);
+}
+```
+
+### Form Models
+
+```typescript
+interface FormData {
+  field1: string;
+  field2: number;
+  field3?: boolean;
+}
+
+formData = signal<FormData>({
+  field1: "",
+  field2: 0,
+});
+```
+
+## 🌐 i18n e Localização
+
+### Textos em PT-BR
+
+- Todos os textos devem estar em português brasileiro
+- Use placeholder descritivos
+- Mensagens de erro claras e amigáveis
+
+### Formatação
+
+- Moeda: `R$ 0,00`
+- Telefone: `(00) 00000-0000`
+- CEP: `00000-000`
+- CNPJ: `00.000.000/0001-00`
+
+## 🧹 Code Quality
+
+### Clean Code
+
+- Métodos pequenos e focados
+- Nomes descritivos
+- Evite aninhamento profundo
+- Use early returns
+
+### Comments
+
+- Comente apenas lógica complexa
+- Use comentários em português
+- Prefira código auto-explicativo
+
+### Consistency
+
+- Indentação: 2 espaços
+- Aspas: duplas para HTML, simples para TS quando possível
+- Ponto e vírgula: sempre ao final de statements
+
+## 🔍 Debugging
+
+### Console Logs
+
+- Use `console.log` apenas para debug temporário
+- Remova antes de commit
+- Use optional chaining: `data?.field?.subfield`
+
+## 📦 Exports e Barrel Files
+
+### Shared Module
+
+- Exporte componentes compartilhados via `src/app/shared/index.ts`
+- Facilita imports: `import { FieldComponent } from '@shared';`
+
+## ⚙️ Environment e Config
+
+### Configuration Files
+
+- `angular.json` - Configuração do Angular CLI
+- `tailwind.config.js` - Configuração do Tailwind
+- `tsconfig.json` - Configuração TypeScript
+- `eslint.config.js` - Regras de linting
+
+## 🎯 Checklist de Revisão de Código
+
+Antes de marcar qualquer feature como completa, verifique:
+
+- [ ] Componente usa `inject()` ao invés de constructor injection
+- [ ] Todos os elementos interativos são acessíveis por teclado
+- [ ] Todos os labels têm `for` associado aos inputs
+- [ ] Não há uso de `any` sem justificativa
+- [ ] Não há variáveis não utilizadas
+- [ ] Código está formatado (`npm run format`)
+- [ ] Sem erros de lint (`npm run lint`)
+- [ ] Build funciona (`npm run build`)
+- [ ] Responsivo em mobile, tablet e desktop
+- [ ] Estados de loading/error tratados
+- [ ] Validações de formulário implementadas
+- [ ] Feedback visual adequado para ações do usuário
+
+## 🎨 Convenções de Estilo Específicas
+
+### Hover States
+
+- Botões: `hover:bg-{cor}` + `hover:text-{cor}`
+- Cards: `hover:border-{cor}` ou `hover:bg-gray-50`
+- Links: `hover:underline` ou `hover:no-underline`
+
+### Focus States
+
+- Inputs: `focus:border-yooga-primary` + `focus:outline-none`
+- Buttons: Native focus ring ou custom com `focus:ring-2`
+
+### Disabled States
+
+- Use `[disabled]` com lógica apropriada
+- Adicione classes: `disabled:opacity-50 disabled:cursor-not-allowed`
+
+---
+
+**Última atualização**: 02/10/2025
+**Versão**: 1.0.0

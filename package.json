@@ -1,0 +1,28 @@
+{
+  "name": "face-mask-auth",
+  "version": "1.0.0",
+  "description": "Sistema de autenticação facial escalável e reutilizável",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "postinstall": "node scripts/download-models.js",
+    "install:all": "npm install && npm install --prefix frontend && npm install --prefix backend",
+    "download:models": "node scripts/download-models.js",
+    "dev": "node scripts/dev.js",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "npm run start:dev --prefix backend",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "npm run build --prefix frontend",
+    "build:backend": "npm run build --prefix backend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
