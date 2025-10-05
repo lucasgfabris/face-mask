@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import * as faceapi from 'face-api.js';
 import { authenticateUser } from '../services/api';
+import { faceDetectionService } from '../services/face-detection.service';
 import LoadingSpinner from './LoadingSpinner';
 
 type LoginStatus = 'idle' | 'loading' | 'detecting' | 'success' | 'error';
@@ -11,6 +11,7 @@ function FaceLogin() {
   const [modelsLoaded, setModelsLoaded] = useState<boolean>(false);
   const [userName, setUserName] = useState<string>('');
   const [authenticatedUser, setAuthenticatedUser] = useState<string>('');
+  const [feedbackMessage, setFeedbackMessage] = useState<string>('');
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -25,49 +26,36 @@ function FaceLogin() {
 
   const loadModels = async () => {
     try {
-      const MODEL_URL = '/models';
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-      ]);
+      await faceDetectionService.loadModels();
       setModelsLoaded(true);
     } catch (error) {
-      console.error('Erro ao carregar modelos:', error);
-      setErrorMessage('Erro ao carregar modelos de IA. Verifique a pasta /public/models');
+      const errorMsg = error instanceof Error ? error.message : 'Erro ao carregar modelos';
+      setErrorMessage(errorMsg);
       setLoginStatus('error');
     }
   };
 
   const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 },
-      });
+    if (!videoRef.current) return;
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-      }
+    try {
+      const stream = await faceDetectionService.startCamera(videoRef.current);
+      streamRef.current = stream;
     } catch (error) {
-      console.error('Erro ao acessar câmera:', error);
-      setErrorMessage('Não foi possível acessar a câmera. Verifique as permissões.');
+      const errorMsg = error instanceof Error ? error.message : 'Erro ao acessar câmera';
+      setErrorMessage(errorMsg);
       setLoginStatus('error');
     }
   };
 
   const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
+    faceDetectionService.stopDetection();
+    faceDetectionService.stopCamera(streamRef.current, videoRef.current);
+    streamRef.current = null;
   };
 
   const handleLogin = async () => {
-    if (!modelsLoaded) {
+    if (!faceDetectionService.isModelsLoaded()) {
       setErrorMessage('Modelos ainda não foram carregados. Aguarde...');
       return;
     }
@@ -83,51 +71,37 @@ function FaceLogin() {
     await startCamera();
 
     setTimeout(() => {
-      detectFace();
+      startContinuousDetection();
     }, 1000);
   };
 
-  const detectFace = async () => {
+  const startContinuousDetection = () => {
     if (!videoRef.current) return;
 
     setLoginStatus('detecting');
 
-    try {
-      const detection = await faceapi
-        .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
-        .withFaceLandmarks()
-        .withFaceDescriptor();
-
-      if (!detection) {
-        setErrorMessage('Nenhum rosto detectado. Posicione-se na frente da câmera.');
+    faceDetectionService.startContinuousDetection(videoRef.current, {
+      onFeedback: (message: string) => {
+        setFeedbackMessage(message);
+      },
+      onSuccess: async (faceDescriptor: number[]) => {
+        await detectFace(faceDescriptor);
+      },
+      onError: (error: string) => {
+        setErrorMessage(error);
         setLoginStatus('error');
         stopCamera();
-        return;
-      }
+      },
+    });
+  };
 
-      if (canvasRef.current && videoRef.current) {
-        const displaySize = {
-          width: videoRef.current.width,
-          height: videoRef.current.height,
-        };
-        faceapi.matchDimensions(canvasRef.current, displaySize);
-        const resizedDetection = faceapi.resizeResults(detection, displaySize);
-
-        const context = canvasRef.current.getContext('2d');
-        if (context) {
-          context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-          faceapi.draw.drawDetections(canvasRef.current, resizedDetection);
-          faceapi.draw.drawFaceLandmarks(canvasRef.current, resizedDetection);
-        }
-      }
-
-      const faceDescriptor = Array.from(detection.descriptor);
-
+  const detectFace = async (faceDescriptor: number[]) => {
+    try {
       const response = await authenticateUser(userName, faceDescriptor);
 
       if (response.success) {
         setLoginStatus('success');
-        setAuthenticatedUser(response.userName);
+        setAuthenticatedUser(response.userName || '');
         stopCamera();
       } else {
         setErrorMessage(response.message || 'Falha na autenticação');
@@ -186,16 +160,23 @@ function FaceLogin() {
               muted
               width="640"
               height="480"
-              className="w-full h-auto"
+              className="w-full h-auto scale-x-[-1]"
             />
             <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />
           </div>
 
-          <div className="flex items-center justify-center gap-3 text-primary">
-            <LoadingSpinner />
-            <span className="font-medium">
-              {loginStatus === 'loading' ? 'Iniciando câmera...' : 'Detectando rosto...'}
-            </span>
+          <div className="space-y-3">
+            <div className="flex items-center justify-center gap-3 text-primary">
+              <LoadingSpinner />
+              <span className="font-medium">
+                {loginStatus === 'loading' ? 'Iniciando câmera...' : 'Analisando posição...'}
+              </span>
+            </div>
+            {feedbackMessage && loginStatus === 'detecting' && (
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-center">
+                <p className="text-blue-900 font-medium text-lg">{feedbackMessage}</p>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -1,249 +1,260 @@
 # Face Mask Auth
 
-Sistema de autenticação facial escalável e reutilizável desenvolvido com React, TypeScript, Tailwind CSS e NestJS.
+Sistema de autenticação facial seguro e escalável usando reconhecimento facial com face-api.js.
 
-## Características
+## Tecnologias
 
-- **Autenticação Facial Segura**: Utiliza face-api.js para detecção e reconhecimento facial
-- **Interface Moderna**: UI responsiva e acessível com Tailwind CSS
-- **TypeScript**: Type safety completo em frontend e backend
-- **Escalável**: Arquitetura modular pronta para produção
-- **Reutilizável**: Fácil integração em outros projetos
-- **Seguro**: Validações robustas e tratamento de erros
+**Frontend:**
+- React 18 + TypeScript
+- Vite
+- TailwindCSS
+- face-api.js
+- Axios
+
+**Backend:**
+- NestJS
+- TypeORM
+- MySQL
+- bcrypt
 
 ## Pré-requisitos
 
 - Node.js >= 18.0.0
 - npm >= 9.0.0
-- MySQL 5.7+ ou MariaDB 10.3+
-- Webcam funcional
+- MySQL >= 8.0
 
-## Instalação
+## Instalação Rápida
 
 ### 1. Clone o repositório
 
 ```bash
-git clone <seu-repositorio>
+git clone <url-do-repositorio>
 cd face-mask
 ```
 
-### 2. Configure o Banco de Dados MySQL
-
-```bash
-# Execute o script SQL para criar o banco e tabelas
-mysql -u root -p < database/schema.sql
-```
-
-Veja instruções detalhadas em `database/README.md`
-
-### 3. Configure as Variáveis de Ambiente
-
-Crie o arquivo `backend/.env`:
-
-```env
-DB_HOST=localhost
-DB_PORT=3306
-DB_USERNAME=seu_usuario
-DB_PASSWORD=sua_senha
-DB_DATABASE=face_mask_auth
-DB_SYNCHRONIZE=false
-DB_LOGGING=true
-```
-
-### 4. Instale as dependências
+### 2. Instale as dependências
 
 ```bash
 npm run install:all
 ```
 
-Este comando irá automaticamente:
-- Instalar todas as dependências do projeto
-- Criar a pasta `frontend/public/models/`
-- Baixar os 7 modelos necessários do face-api.js
+Este comando irá:
+- Instalar dependências do projeto raiz
+- Instalar dependências do frontend
+- Instalar dependências do backend
+- Baixar automaticamente os modelos de IA necessários
 
-**Nota**: Os modelos são baixados automaticamente via script. Se precisar baixá-los manualmente, execute:
+### 3. Configure o banco de dados
+
+#### 3.1. Crie o banco de dados
+
+Execute o script SQL no MySQL:
+
 ```bash
-npm run download:models
+mysql -u root -p < database/install-manual.sql
 ```
 
-## Executando o Projeto
+Ou copie e cole o conteúdo de `database/install-manual.sql` no MySQL Workbench/phpMyAdmin.
 
-### Modo Desenvolvimento (Frontend + Backend)
+#### 3.2. Configure as variáveis de ambiente
+
+Crie o arquivo `backend/.env` baseado no `backend/env.example`:
+
+```bash
+cp backend/env.example backend/.env
+```
+
+Edite `backend/.env` com suas credenciais:
+
+```env
+DB_HOST=localhost
+DB_PORT=3306
+DB_USERNAME=root
+DB_PASSWORD=sua_senha
+DB_DATABASE=face_mask_auth
+DB_SYNCHRONIZE=false
+DB_LOGGING=true
+PORT=3001
+NODE_ENV=development
+CORS_ORIGIN=http://localhost:5173
+FACE_MATCH_THRESHOLD=0.6
+```
+
+### 4. Inicie o projeto
 
 ```bash
 npm run dev
 ```
 
 Isso iniciará:
-- Frontend em: http://localhost:3000
-- Backend em: http://localhost:3001
+- Frontend: http://localhost:5173
+- Backend: http://localhost:3001
 
-### Executar Separadamente
+## Scripts Disponíveis
 
-**Frontend:**
+### Projeto Raiz
+
 ```bash
-npm run dev:frontend
+npm run dev              # Inicia frontend e backend simultaneamente
+npm run install:all      # Instala todas as dependências
+npm run download:models  # Baixa os modelos de IA
+npm run build           # Build de produção (frontend + backend)
+npm run lint            # Verifica erros de lint
+npm run format          # Formata o código
 ```
 
-**Backend:**
+### Frontend
+
 ```bash
-npm run dev:backend
+cd frontend
+npm run dev      # Inicia servidor de desenvolvimento
+npm run build    # Build de produção
+npm run preview  # Preview do build
+npm run lint     # ESLint
+npm run format   # Prettier
 ```
 
-## Build para Produção
+### Backend
+
+```bash
+cd backend
+npm run start:dev   # Inicia em modo desenvolvimento
+npm run build       # Build de produção
+npm run start:prod  # Inicia versão de produção
+npm run lint        # ESLint
+npm run format      # Prettier
+```
+
+## Estrutura do Projeto
+
+```
+face-mask/
+├── frontend/               # Aplicação React
+│   ├── public/models/     # Modelos de IA do face-api.js
+│   └── src/
+│       ├── components/    # Componentes React
+│       └── services/      # Serviços (API, detecção facial)
+├── backend/               # API NestJS
+│   └── src/
+│       ├── auth/         # Módulo de autenticação
+│       └── database/     # Configuração e entidades
+├── database/             # Scripts SQL
+└── scripts/              # Scripts auxiliares
+```
+
+## Funcionalidades
+
+### Registro de Usuário
+1. Digite nome e e-mail
+2. Posicione-se na frente da câmera
+3. Siga as instruções em tempo real:
+   - "Aproxime-se mais da câmera"
+   - "Mova-se para a direita/esquerda"
+   - "Olhe diretamente para a câmera"
+   - "Melhore a iluminação"
+4. Captura automática quando a posição estiver perfeita
+
+### Login Facial
+1. Digite seu nome de usuário
+2. Posicione-se na frente da câmera
+3. Sistema compara seu rosto com o cadastrado
+4. Login automático se houver match
+
+## Características Técnicas
+
+### Detecção Facial
+- Análise de qualidade em tempo real
+- Verificação de distância da câmera
+- Verificação de centralização (horizontal/vertical)
+- Verificação de orientação do rosto
+- Verificação de iluminação
+- Threshold de similaridade configurável (padrão: 0.6)
+
+### Segurança
+- Descriptors faciais armazenados de forma segura
+- Logs de autenticação (sucesso/falha)
+- Validação de dados no backend
+- CORS configurável
+- Proteção contra SQL injection (TypeORM)
+
+### Performance
+- Modelos de IA carregados uma única vez (singleton)
+- Detecção contínua otimizada (500ms de intervalo)
+- Código centralizado e reutilizável
+- Build otimizado para produção
+
+## Banco de Dados
+
+### Tabela: users
+- `id`: ID único do usuário
+- `user_name`: Nome de usuário (único)
+- `email`: E-mail (único)
+- `face_descriptor`: Descriptor facial (128 dimensões)
+- `created_at`: Data de criação
+- `updated_at`: Data de atualização
+
+### Tabela: auth_logs
+- `id`: ID do log
+- `user_name`: Nome do usuário
+- `auth_type`: Tipo (login/register)
+- `success`: Sucesso (true/false)
+- `ip_address`: IP do cliente
+- `user_agent`: User agent
+- `created_at`: Data do evento
+
+## Solução de Problemas
+
+### Modelos não encontrados
+```bash
+npm run download:models
+```
+
+### Erro de conexão com banco de dados
+- Verifique se o MySQL está rodando
+- Confirme as credenciais no `backend/.env`
+- Verifique se o banco `face_mask_auth` foi criado
+
+### Câmera não funciona
+- Permita acesso à câmera no navegador
+- Use HTTPS em produção (requisito do navegador)
+- Verifique se outra aplicação não está usando a câmera
+
+### Erro de CORS
+- Ajuste `CORS_ORIGIN` no `backend/.env`
+- Certifique-se de que a URL do frontend está correta
+
+## Produção
+
+### Build
 
 ```bash
 npm run build
 ```
 
-## Como Usar
-
-### 1. Registrar Novo Usuário
-
-1. Clique na aba "Registrar"
-2. Digite seu nome de usuário e e-mail
-3. Clique em "Registrar com Face"
-4. Permita o acesso à câmera
-5. Posicione seu rosto na frente da câmera
-6. Aguarde a captura e confirmação
-
-### 2. Fazer Login
-
-1. Clique na aba "Login"
-2. Digite seu nome de usuário
-3. Clique em "Iniciar Login Facial"
-4. Permita o acesso à câmera
-5. Posicione seu rosto na frente da câmera
-6. Aguarde a autenticação
-
-## Arquitetura
-
-### Frontend (React + TypeScript)
-
-```
-frontend/
-├── src/
-│   ├── components/
-│   │   ├── FaceLogin.tsx      # Componente de login facial
-│   │   ├── FaceRegister.tsx   # Componente de registro facial
-│   │   └── LoadingSpinner.tsx # Componente de loading
-│   ├── services/
-│   │   └── api.ts             # Cliente HTTP para API
-│   ├── App.tsx                # Componente principal
-│   ├── main.tsx               # Entry point
-│   └── index.css              # Estilos globais
-└── public/
-    └── models/                # Modelos do face-api.js
-```
-
-### Backend (NestJS + TypeScript)
-
-```
-backend/
-├── src/
-│   ├── auth/
-│   │   ├── dto/
-│   │   │   └── auth.dto.ts              # DTOs de validação
-│   │   ├── auth.controller.ts           # Rotas de autenticação
-│   │   ├── auth.service.ts              # Lógica de negócio
-│   │   ├── face-recognition.service.ts  # Serviço de reconhecimento facial
-│   │   └── auth.module.ts               # Módulo de autenticação
-│   ├── app.module.ts          # Módulo raiz
-│   └── main.ts                # Entry point
-```
-
-## Segurança
-
-- **Validação de Dados**: Todas as entradas são validadas com class-validator
-- **CORS Configurado**: Apenas origens permitidas podem acessar a API
-- **Threshold de Matching**: Distância euclidiana < 0.6 para reconhecimento
-- **Prevenção de Duplicatas**: Verifica rostos já registrados
-- **Type Safety**: TypeScript em todo o código
-
-## Tecnologias Utilizadas
-
 ### Frontend
-- React 18
-- TypeScript
-- Tailwind CSS
-- face-api.js
-- Axios
-- Vite
+O build estará em `frontend/dist/`. Sirva com qualquer servidor estático (Nginx, Apache, Vercel, Netlify).
 
 ### Backend
-- NestJS
-- TypeScript
-- class-validator
-- class-transformer
-- bcrypt
-
-## Configuração Avançada
-
-### Ajustar Threshold de Reconhecimento
-
-Edite `backend/src/auth/face-recognition.service.ts`:
-
-```typescript
-private readonly MATCH_THRESHOLD = 0.6; // Diminua para ser mais restritivo
-```
-
-### Configurar CORS
-
-Edite `backend/src/main.ts`:
-
-```typescript
-app.enableCors({
-  origin: 'http://localhost:3000', // Adicione suas origens
-  credentials: true,
-});
-```
-
-### Persistência de Dados
-
-Os dados são armazenados em MySQL usando TypeORM:
-
-- **Tabela `users`**: Armazena usuários e descritores faciais
-- **Tabela `auth_logs`**: Registra todas as tentativas de login/registro
-
-Para mais detalhes, veja `database/README.md`
-
-## Scripts Disponíveis
+O build estará em `backend/dist/`. Execute com:
 
 ```bash
-npm run install:all    # Instala todas as dependências e baixa modelos automaticamente
-npm run download:models # Baixa apenas os modelos do face-api.js
-npm run dev            # Inicia frontend e backend
-npm run dev:frontend   # Inicia apenas frontend
-npm run dev:backend    # Inicia apenas backend
-npm run build          # Build de produção
-npm run build:frontend # Build do frontend
-npm run build:backend  # Build do backend
-npm run lint           # Executa linter no frontend e backend
-npm run format         # Formata código com Prettier no frontend e backend
+cd backend
+npm run start:prod
 ```
 
-## Contribuindo
+### Variáveis de Ambiente em Produção
 
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
+```env
+NODE_ENV=production
+CORS_ORIGIN=https://seu-dominio.com
+DB_SYNCHRONIZE=false
+DB_LOGGING=false
+```
 
 ## Licença
 
-Este projeto está sob a licença MIT.
-
-## Problemas Conhecidos
-
-- **Câmera não inicia**: Verifique as permissões do navegador
-- **Modelos não carregam**: Certifique-se de que os arquivos estão em `frontend/public/models/`
-- **Rosto não detectado**: Melhore a iluminação e posicione-se de frente para a câmera
+MIT
 
 ## Suporte
 
-Para dúvidas ou problemas, abra uma issue no repositório.
-
----
-
-Desenvolvido usando React, TypeScript, Tailwind CSS e NestJS
+Para problemas ou dúvidas, abra uma issue no repositório.
