@@ -160,6 +160,11 @@ face-mask/
 3. Sistema compara seu rosto com o cadastrado
 4. Login automático se houver match
 
+### Privacidade
+- A visualização da câmera possui blur aplicado para proteger a privacidade do usuário
+- A detecção facial funciona normalmente mesmo com o blur visual
+- Apenas os descriptors faciais são processados e armazenados
+
 ## Características Técnicas
 
 ### Detecção Facial
@@ -170,8 +175,9 @@ face-mask/
 - Verificação de iluminação
 - Threshold de similaridade configurável (padrão: 0.6)
 
-### Segurança
+### Segurança e Privacidade
 - Descriptors faciais armazenados de forma segura
+- Blur aplicado na visualização da câmera para privacidade
 - Logs de autenticação (sucesso/falha)
 - Validação de dados no backend
 - CORS configurável
