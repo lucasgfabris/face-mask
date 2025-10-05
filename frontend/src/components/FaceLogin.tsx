@@ -68,11 +68,18 @@ function FaceLogin() {
     setLoginStatus('loading');
     setErrorMessage('');
 
-    await startCamera();
-
-    setTimeout(() => {
-      startContinuousDetection();
-    }, 1000);
+    // Aguardar o React renderizar o elemento de vídeo
+    setTimeout(async () => {
+      try {
+        await startCamera();
+        
+        setTimeout(() => {
+          startContinuousDetection();
+        }, 1000);
+      } catch (error) {
+        console.error('Erro ao iniciar câmera:', error);
+      }
+    }, 100);
   };
 
   const startContinuousDetection = () => {

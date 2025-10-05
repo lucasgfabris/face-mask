@@ -40,9 +40,26 @@ export class FaceDetectionService {
   async startCamera(videoElement: HTMLVideoElement): Promise<MediaStream> {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 },
+        video: { 
+          width: { ideal: 640 }, 
+          height: { ideal: 480 },
+          facingMode: 'user'
+        },
       });
+      
       videoElement.srcObject = stream;
+      
+      // Aguardar o vídeo carregar
+      await new Promise<void>((resolve) => {
+        videoElement.onloadedmetadata = () => {
+          videoElement.play().then(() => {
+            resolve();
+          }).catch(() => {
+            resolve();
+          });
+        };
+      });
+      
       return stream;
     } catch (error) {
       console.error('Erro ao acessar câmera:', error);
