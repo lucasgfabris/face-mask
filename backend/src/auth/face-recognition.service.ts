@@ -87,7 +87,7 @@ export class FaceRecognitionService {
     for (let i = 0; i < descriptors.length; i++) {
       for (let j = i + 1; j < descriptors.length; j++) {
         const distance = this.euclideanDistance(descriptors[i], descriptors[j]);
-        
+
         if (distance > maxInternalDistance) {
           return {
             isValid: false,

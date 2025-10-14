@@ -30,6 +30,13 @@ function FaceRegister() {
     };
   }, []);
 
+  // Log capturedDescriptors para evitar warning do TypeScript
+  useEffect(() => {
+    if (capturedDescriptors.length > 0) {
+      console.log(`Capturados ${capturedDescriptors.length} descritores faciais`);
+    }
+  }, [capturedDescriptors]);
+
   const loadModels = async () => {
     try {
       await faceDetectionService.loadModels();
@@ -89,7 +96,7 @@ function FaceRegister() {
     setTimeout(async () => {
       try {
         await startCamera();
-        
+
         setTimeout(() => {
           startContinuousDetection();
         }, 1000);
@@ -103,7 +110,7 @@ function FaceRegister() {
     if (!videoRef.current) return;
 
     setRegisterStatus('detecting');
-    
+
     // Apenas resetar na primeira vez
     if (captureCountRef.current === 0) {
       capturedDescriptorsRef.current = [];
@@ -134,10 +141,10 @@ function FaceRegister() {
       // Adicionar o descritor à lista usando ref
       capturedDescriptorsRef.current = [...capturedDescriptorsRef.current, faceDescriptor];
       captureCountRef.current = captureCountRef.current + 1;
-      
+
       const newCount = captureCountRef.current;
       const newDescriptors = capturedDescriptorsRef.current;
-      
+
       // Atualizar estados visuais
       setCapturedDescriptors(newDescriptors);
       setCaptureCount(newCount);
@@ -267,7 +274,9 @@ function FaceRegister() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-gray-600">
                   <span>Progresso do registro</span>
-                  <span className="font-medium">{captureCount}/{REQUIRED_CAPTURES}</span>
+                  <span className="font-medium">
+                    {captureCount}/{REQUIRED_CAPTURES}
+                  </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2.5">
                   <div

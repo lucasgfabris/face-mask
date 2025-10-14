@@ -44,26 +44,29 @@ export class FaceDetectionService {
   async startCamera(videoElement: HTMLVideoElement): Promise<MediaStream> {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          width: { ideal: 640 }, 
+        video: {
+          width: { ideal: 640 },
           height: { ideal: 480 },
-          facingMode: 'user'
+          facingMode: 'user',
         },
       });
-      
+
       videoElement.srcObject = stream;
-      
+
       // Aguardar o vídeo carregar
       await new Promise<void>((resolve) => {
         videoElement.onloadedmetadata = () => {
-          videoElement.play().then(() => {
-            resolve();
-          }).catch(() => {
-            resolve();
-          });
+          videoElement
+            .play()
+            .then(() => {
+              resolve();
+            })
+            .catch(() => {
+              resolve();
+            });
         };
       });
-      
+
       return stream;
     } catch (error) {
       console.error('Erro ao acessar câmera:', error);
@@ -166,8 +169,7 @@ export class FaceDetectionService {
 
     // Verificar se os pontos estão claramente visíveis (distância mínima)
     const eyeDistance = Math.sqrt(
-      Math.pow(rightEye[0].x - leftEye[0].x, 2) + 
-      Math.pow(rightEye[0].y - leftEye[0].y, 2)
+      Math.pow(rightEye[0].x - leftEye[0].x, 2) + Math.pow(rightEye[0].y - leftEye[0].y, 2)
     );
 
     if (eyeDistance < 30) {
@@ -178,10 +180,11 @@ export class FaceDetectionService {
     const eyeCenterY = (leftEye[0].y + rightEye[0].y) / 2;
     const noseY = nose[3].y;
     const mouthCenterY = (mouth[0].y + mouth[6].y) / 2;
-    
+
     const eyeNoseDistance = Math.abs(noseY - eyeCenterY);
     const noseMouthDistance = Math.abs(mouthCenterY - noseY);
-    const verticalRatio = Math.abs(eyeNoseDistance - noseMouthDistance) / Math.max(eyeNoseDistance, noseMouthDistance);
+    const verticalRatio =
+      Math.abs(eyeNoseDistance - noseMouthDistance) / Math.max(eyeNoseDistance, noseMouthDistance);
 
     if (verticalRatio > 0.5) {
       return { isGood: false, message: 'Mantenha o rosto reto (não incline)' };
@@ -257,7 +260,7 @@ export class FaceDetectionService {
     const verticalDist2 = Math.sqrt(
       Math.pow(eye[2].x - eye[4].x, 2) + Math.pow(eye[2].y - eye[4].y, 2)
     );
-    
+
     // Distância horizontal
     const horizontalDist = Math.sqrt(
       Math.pow(eye[0].x - eye[3].x, 2) + Math.pow(eye[0].y - eye[3].y, 2)
@@ -279,8 +282,7 @@ export class FaceDetectionService {
     const previousNose = this.previousLandmarks.getNose()[3];
 
     const movement = Math.sqrt(
-      Math.pow(currentNose.x - previousNose.x, 2) + 
-      Math.pow(currentNose.y - previousNose.y, 2)
+      Math.pow(currentNose.x - previousNose.x, 2) + Math.pow(currentNose.y - previousNose.y, 2)
     );
 
     this.previousLandmarks = currentLandmarks;

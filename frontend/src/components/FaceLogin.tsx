@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { authenticateUser } from '../services/api';
+import { authenticateUser, checkUserExists } from '../services/api';
 import { faceDetectionService } from '../services/face-detection.service';
 import LoadingSpinner from './LoadingSpinner';
 
-type LoginStatus = 'idle' | 'loading' | 'detecting' | 'success' | 'error';
+type LoginStatus = 'idle' | 'validating' | 'loading' | 'detecting' | 'success' | 'error';
 
 function FaceLogin() {
   const [loginStatus, setLoginStatus] = useState<LoginStatus>('idle');
@@ -65,14 +65,28 @@ function FaceLogin() {
       return;
     }
 
-    setLoginStatus('loading');
+    setLoginStatus('validating');
     setErrorMessage('');
+
+    // Validar se o usuário existe antes de iniciar a câmera
+    const userCheck = await checkUserExists(userName);
+
+    if (!userCheck.exists) {
+      setErrorMessage(
+        userCheck.message ||
+          'Usuário não encontrado. Verifique o nome de usuário e tente novamente.'
+      );
+      setLoginStatus('error');
+      return;
+    }
+
+    setLoginStatus('loading');
 
     // Aguardar o React renderizar o elemento de vídeo
     setTimeout(async () => {
       try {
         await startCamera();
-        
+
         setTimeout(() => {
           startContinuousDetection();
         }, 1000);
@@ -155,6 +169,15 @@ function FaceLogin() {
           >
             {modelsLoaded ? 'Iniciar Login Facial' : 'Carregando modelos...'}
           </button>
+        </div>
+      )}
+
+      {loginStatus === 'validating' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-center gap-3 text-primary py-8">
+            <LoadingSpinner />
+            <span className="font-medium">Validando usuário...</span>
+          </div>
         </div>
       )}
 

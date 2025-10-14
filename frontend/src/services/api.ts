@@ -62,3 +62,24 @@ export const authenticateUser = async (
     };
   }
 };
+
+export const checkUserExists = async (
+  userName: string
+): Promise<{ exists: boolean; message?: string }> => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/auth/users`);
+    if (response.data.success && response.data.users) {
+      const userExists = response.data.users.some(
+        (user: { userName: string }) => user.userName.toLowerCase() === userName.toLowerCase()
+      );
+      return {
+        exists: userExists,
+        message: userExists ? undefined : 'Usuário não encontrado',
+      };
+    }
+    return { exists: false, message: 'Erro ao verificar usuário' };
+  } catch (error) {
+    console.error('Erro ao verificar usuário:', error);
+    return { exists: false, message: 'Erro de conexão com o servidor' };
+  }
+};

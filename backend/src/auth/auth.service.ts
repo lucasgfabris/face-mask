@@ -39,7 +39,8 @@ export class AuthService {
       }
 
       // Validar consistência dos descritores
-      const consistencyCheck = this.faceRecognitionService.validateDescriptorConsistency(faceDescriptors);
+      const consistencyCheck =
+        this.faceRecognitionService.validateDescriptorConsistency(faceDescriptors);
       if (!consistencyCheck.isValid) {
         await this.logAuth(userName, AuthType.REGISTER, false, ipAddress, userAgent);
         throw new HttpException(consistencyCheck.message, HttpStatus.BAD_REQUEST);
