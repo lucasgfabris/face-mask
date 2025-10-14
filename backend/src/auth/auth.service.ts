@@ -17,7 +17,7 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto, ipAddress?: string, userAgent?: string) {
-    const { userName, email, faceDescriptor } = registerDto;
+    const { userName, email, faceDescriptors } = registerDto;
 
     try {
       const existingUserByName = await this.userRepository.findOne({
@@ -38,11 +38,22 @@ export class AuthService {
         throw new HttpException('E-mail já cadastrado', HttpStatus.CONFLICT);
       }
 
+      // Validar consistência dos descritores
+      const consistencyCheck = this.faceRecognitionService.validateDescriptorConsistency(faceDescriptors);
+      if (!consistencyCheck.isValid) {
+        await this.logAuth(userName, AuthType.REGISTER, false, ipAddress, userAgent);
+        throw new HttpException(consistencyCheck.message, HttpStatus.BAD_REQUEST);
+      }
+
+      // Calcular o descritor médio
+      const averageDescriptor = this.faceRecognitionService.averageDescriptors(faceDescriptors);
+
+      // Verificar se o rosto já está registrado
       const allUsers = await this.userRepository.find();
       const existingDescriptors = allUsers.map((user) => user.getFaceDescriptorArray());
 
       const isFaceRegistered = this.faceRecognitionService.findMatchingFace(
-        faceDescriptor,
+        averageDescriptor,
         existingDescriptors
       );
 
@@ -54,7 +65,7 @@ export class AuthService {
       const user = new User();
       user.userName = userName.toLowerCase();
       user.email = email.toLowerCase();
-      user.setFaceDescriptorArray(faceDescriptor);
+      user.setFaceDescriptorArray(averageDescriptor);
 
       await this.userRepository.save(user);
       await this.logAuth(userName, AuthType.REGISTER, true, ipAddress, userAgent);

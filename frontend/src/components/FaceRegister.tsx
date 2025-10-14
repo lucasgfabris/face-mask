@@ -5,6 +5,8 @@ import LoadingSpinner from './LoadingSpinner';
 
 type RegisterStatus = 'idle' | 'loading' | 'detecting' | 'success' | 'error';
 
+const REQUIRED_CAPTURES = 3; // Número de capturas necessárias
+
 function FaceRegister() {
   const [registerStatus, setRegisterStatus] = useState<RegisterStatus>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -12,10 +14,14 @@ function FaceRegister() {
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [feedbackMessage, setFeedbackMessage] = useState<string>('');
+  const [capturedDescriptors, setCapturedDescriptors] = useState<number[][]>([]);
+  const [captureCount, setCaptureCount] = useState<number>(0);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const capturedDescriptorsRef = useRef<number[][]>([]);
+  const captureCountRef = useRef<number>(0);
 
   useEffect(() => {
     loadModels();
@@ -97,10 +103,20 @@ function FaceRegister() {
     if (!videoRef.current) return;
 
     setRegisterStatus('detecting');
+    
+    // Apenas resetar na primeira vez
+    if (captureCountRef.current === 0) {
+      capturedDescriptorsRef.current = [];
+      setCapturedDescriptors([]);
+      setCaptureCount(0);
+    }
 
     faceDetectionService.startContinuousDetection(videoRef.current, {
       onFeedback: (message: string) => {
-        setFeedbackMessage(message);
+        const currentCount = captureCountRef.current;
+        if (currentCount < REQUIRED_CAPTURES) {
+          setFeedbackMessage(`Captura ${currentCount}/${REQUIRED_CAPTURES} - ${message}`);
+        }
       },
       onSuccess: async (faceDescriptor: number[]) => {
         await captureFace(faceDescriptor);
@@ -115,21 +131,57 @@ function FaceRegister() {
 
   const captureFace = async (faceDescriptor: number[]) => {
     try {
-      const response = await registerUser(userName, userEmail, faceDescriptor);
+      // Adicionar o descritor à lista usando ref
+      capturedDescriptorsRef.current = [...capturedDescriptorsRef.current, faceDescriptor];
+      captureCountRef.current = captureCountRef.current + 1;
+      
+      const newCount = captureCountRef.current;
+      const newDescriptors = capturedDescriptorsRef.current;
+      
+      // Atualizar estados visuais
+      setCapturedDescriptors(newDescriptors);
+      setCaptureCount(newCount);
+      setFeedbackMessage(`Captura ${newCount}/${REQUIRED_CAPTURES} realizada com sucesso!`);
+
+      // Se ainda não capturou todas, continuar
+      if (newCount < REQUIRED_CAPTURES) {
+        // Aguardar 1 segundo antes da próxima captura
+        setTimeout(() => {
+          // Resetar o estado de captura do serviço para permitir nova captura
+          faceDetectionService.stopDetection();
+          startContinuousDetection();
+        }, 1500);
+        return;
+      }
+
+      // Se capturou todas, enviar para o backend
+      faceDetectionService.stopDetection();
+      setFeedbackMessage('Processando todas as capturas...');
+
+      const response = await registerUser(userName, userEmail, newDescriptors);
 
       if (response.success) {
         setRegisterStatus('success');
         stopCamera();
+        // Resetar refs
+        capturedDescriptorsRef.current = [];
+        captureCountRef.current = 0;
       } else {
         setErrorMessage(response.message || 'Falha no registro');
         setRegisterStatus('error');
         stopCamera();
+        // Resetar refs
+        capturedDescriptorsRef.current = [];
+        captureCountRef.current = 0;
       }
     } catch (error) {
       console.error('Erro na captura:', error);
-      setErrorMessage('Erro ao processar imagem facial');
+      setErrorMessage('Erro ao processar imagens faciais');
       setRegisterStatus('error');
       stopCamera();
+      // Resetar refs
+      capturedDescriptorsRef.current = [];
+      captureCountRef.current = 0;
     }
   };
 
@@ -144,6 +196,10 @@ function FaceRegister() {
     setErrorMessage('');
     setUserName('');
     setUserEmail('');
+    setCapturedDescriptors([]);
+    setCaptureCount(0);
+    capturedDescriptorsRef.current = [];
+    captureCountRef.current = 0;
     stopCamera();
   };
 
@@ -201,12 +257,26 @@ function FaceRegister() {
               muted
               width="640"
               height="480"
-              className="w-full h-auto scale-x-[-1] blur-md"
+              className="w-full h-auto scale-x-[-1] blur-none"
             />
             <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />
           </div>
 
           <div className="space-y-3">
+            {registerStatus === 'detecting' && captureCount > 0 && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>Progresso do registro</span>
+                  <span className="font-medium">{captureCount}/{REQUIRED_CAPTURES}</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div
+                    className="bg-primary h-2.5 rounded-full transition-all duration-300"
+                    style={{ width: `${(captureCount / REQUIRED_CAPTURES) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
             <div className="flex items-center justify-center gap-3 text-primary">
               <LoadingSpinner />
               <span className="font-medium">

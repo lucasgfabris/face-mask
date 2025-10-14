@@ -167,7 +167,7 @@ function FaceLogin() {
               muted
               width="640"
               height="480"
-              className="w-full h-auto scale-x-[-1] blur-md"
+              className="w-full h-auto scale-x-[-1] blur-none"
             />
             <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />
           </div>

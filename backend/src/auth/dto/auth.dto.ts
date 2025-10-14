@@ -10,8 +10,8 @@ export class RegisterDto {
   email: string;
 
   @IsArray()
-  @ArrayMinSize(128)
-  faceDescriptor: number[];
+  @ArrayMinSize(3) // Agora esperamos múltiplos descritores
+  faceDescriptors: number[][]; // Array de arrays
 }
 
 export class LoginDto {

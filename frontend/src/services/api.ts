@@ -16,13 +16,13 @@ interface AuthResponse {
 export const registerUser = async (
   userName: string,
   email: string,
-  faceDescriptor: number[]
+  faceDescriptors: number[][]
 ): Promise<RegisterResponse> => {
   try {
     const response = await axios.post(`${API_BASE_URL}/auth/register`, {
       userName,
       email,
-      faceDescriptor,
+      faceDescriptors,
     });
     return response.data;
   } catch (error) {

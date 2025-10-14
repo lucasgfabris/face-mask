@@ -15,6 +15,10 @@ export class FaceDetectionService {
   private detectionInterval: number | null = null;
   private isCapturing = false;
   private modelsLoaded = false;
+  private previousLandmarks: faceapi.FaceLandmarks68 | null = null;
+  private movementDetected = false;
+  private blinkDetected = false;
+  private previousEyeAspectRatio = 0;
 
   async loadModels(): Promise<void> {
     if (this.modelsLoaded) return;
@@ -148,14 +152,44 @@ export class FaceDetectionService {
     const distanceRatio =
       Math.abs(leftDistance - rightDistance) / Math.max(leftDistance, rightDistance);
 
-    if (distanceRatio > 0.3) {
+    if (distanceRatio > 0.4) {
       return { isGood: false, message: 'Olhe diretamente para a câmera' };
     }
 
     // Verificar confiança da detecção
-    if (detection.detection.score < 0.6) {
+    if (detection.detection.score < 0.65) {
       return { isGood: false, message: 'Melhore a iluminação' };
     }
+
+    // Verificar qualidade dos landmarks - usar as variáveis já declaradas acima
+    const mouth = landmarks.getMouth();
+
+    // Verificar se os pontos estão claramente visíveis (distância mínima)
+    const eyeDistance = Math.sqrt(
+      Math.pow(rightEye[0].x - leftEye[0].x, 2) + 
+      Math.pow(rightEye[0].y - leftEye[0].y, 2)
+    );
+
+    if (eyeDistance < 30) {
+      return { isGood: false, message: 'Aproxime-se mais da câmera' };
+    }
+
+    // Verificar que o rosto não está muito inclinado verticalmente
+    const eyeCenterY = (leftEye[0].y + rightEye[0].y) / 2;
+    const noseY = nose[3].y;
+    const mouthCenterY = (mouth[0].y + mouth[6].y) / 2;
+    
+    const eyeNoseDistance = Math.abs(noseY - eyeCenterY);
+    const noseMouthDistance = Math.abs(mouthCenterY - noseY);
+    const verticalRatio = Math.abs(eyeNoseDistance - noseMouthDistance) / Math.max(eyeNoseDistance, noseMouthDistance);
+
+    if (verticalRatio > 0.5) {
+      return { isGood: false, message: 'Mantenha o rosto reto (não incline)' };
+    }
+
+    // Anti-spoofing: Detectar movimento e piscada (apenas avisar, não bloquear)
+    this.detectMovement(landmarks);
+    this.detectBlink(landmarks);
 
     return { isGood: true, message: 'Posição perfeita! Processando...' };
   }
@@ -206,6 +240,82 @@ export class FaceDetectionService {
       this.detectionInterval = null;
     }
     this.isCapturing = false;
+    this.previousLandmarks = null;
+    this.movementDetected = false;
+    this.blinkDetected = false;
+    this.previousEyeAspectRatio = 0;
+  }
+
+  /**
+   * Calcula o Eye Aspect Ratio (EAR) para detectar piscadas
+   */
+  private calculateEyeAspectRatio(eye: faceapi.Point[]): number {
+    // Distâncias verticais
+    const verticalDist1 = Math.sqrt(
+      Math.pow(eye[1].x - eye[5].x, 2) + Math.pow(eye[1].y - eye[5].y, 2)
+    );
+    const verticalDist2 = Math.sqrt(
+      Math.pow(eye[2].x - eye[4].x, 2) + Math.pow(eye[2].y - eye[4].y, 2)
+    );
+    
+    // Distância horizontal
+    const horizontalDist = Math.sqrt(
+      Math.pow(eye[0].x - eye[3].x, 2) + Math.pow(eye[0].y - eye[3].y, 2)
+    );
+
+    return (verticalDist1 + verticalDist2) / (2.0 * horizontalDist);
+  }
+
+  /**
+   * Detecta movimento comparando landmarks atuais com anteriores
+   */
+  private detectMovement(currentLandmarks: faceapi.FaceLandmarks68): boolean {
+    if (!this.previousLandmarks) {
+      this.previousLandmarks = currentLandmarks;
+      return false;
+    }
+
+    const currentNose = currentLandmarks.getNose()[3];
+    const previousNose = this.previousLandmarks.getNose()[3];
+
+    const movement = Math.sqrt(
+      Math.pow(currentNose.x - previousNose.x, 2) + 
+      Math.pow(currentNose.y - previousNose.y, 2)
+    );
+
+    this.previousLandmarks = currentLandmarks;
+
+    // Movimento significativo detectado (mas não muito grande)
+    if (movement > 5 && movement < 30) {
+      this.movementDetected = true;
+      return true;
+    }
+
+    return this.movementDetected;
+  }
+
+  /**
+   * Detecta piscadas usando Eye Aspect Ratio
+   */
+  private detectBlink(landmarks: faceapi.FaceLandmarks68): boolean {
+    const leftEye = landmarks.getLeftEye();
+    const rightEye = landmarks.getRightEye();
+
+    const leftEAR = this.calculateEyeAspectRatio(leftEye);
+    const rightEAR = this.calculateEyeAspectRatio(rightEye);
+    const avgEAR = (leftEAR + rightEAR) / 2.0;
+
+    // Threshold para detectar olho fechado
+    const EAR_THRESHOLD = 0.2;
+
+    // Se o EAR caiu significativamente, detectou piscada
+    if (this.previousEyeAspectRatio > EAR_THRESHOLD && avgEAR < EAR_THRESHOLD) {
+      this.blinkDetected = true;
+    }
+
+    this.previousEyeAspectRatio = avgEAR;
+
+    return this.blinkDetected;
   }
 }
 
